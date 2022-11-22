@@ -1,10 +1,10 @@
 # WordPress + MYSQL com o Kubernetes
 
-## 📋 Pré-requisitos
+# 📋 Pré-requisitos
 > Ter o Docker e Kubernetes instalados em seu computador.
 
-## 🔧 Instalação
-### Opção 1: Docker Desktop, habilitando um cluster com Kubernetes.
+# 🔧 Instalação
+#### Opção 1: Docker Desktop, habilitando um cluster com Kubernetes.
 Docker Desktop
 > https://docs.docker.com/engine/install/
 
@@ -13,14 +13,14 @@ Kubernetes
 
 ![MicrosoftTeams-image](https://user-images.githubusercontent.com/112576171/202451568-98bb22f4-f33d-4285-ad56-a1f0ab5cdc61.png)
 
-### Opção 2: Docker Desktop com minikube.
+#### Opção 2: Docker Desktop com minikube.
 Docker  
 > https://docs.docker.com/engine/install/  
 
 Kubernetes  
 > Instalar o Minikube: https://minikube.sigs.k8s.io/docs/start/
 
-## 🚀 Começando  
+# 🚀 Começando  
 ### 1. Primeiramente, crie um diretório para o seu projeto. 
 ```
 mkdir labwordpress
@@ -30,12 +30,12 @@ mkdir labwordpress
 cd ./labwordpress 
 ```  
 ### 3. Criação do namespace.
-####  Criando o namespace através de linha de comando.
+#### Opção 1: Criando o namespace através de linha de comando.
 ```  
 kubectl create namespace <nome_do_namespace>  
-```  
-Ou  
-#### Criando o namespace através do arquivo de configuração.  
+```   
+  
+#### Opção 2:  Criando o namespace através do arquivo de configuração.  
 > **Observação:** Crie o arquivo namespace.yaml.
 ```
 New-Item namespace.yaml
@@ -47,6 +47,11 @@ kind: Namespace
 metadata:
   name: labwordpress 
 ```  
+* ```apiVersion:v1``` -> Versão da api.
+* ```kind: Namespace``` -> tipo de objeto a ser criado.
+* ```metadata:``` -> especifica informações do objeto a ser criado.
+   * ```name: labwordpress``` -> definimos o nome do namespace.
+   
 > Salve o arquivo e use o comando abaixo.  
 ```  
 kubectl apply -f namespace.yaml  
@@ -54,8 +59,8 @@ kubectl apply -f namespace.yaml
 ⚠️ Comando apply
 > Lembre-se que o comando apply deve ser sempre onde o arquivo se encontra.  
 
-### 🛠️ Criando o Secret.
-#### Primeiro iremos criar o arquivo secrets, onde será armazenado as nossas senhas para acesso ao MYSQL.  
+# 🛠️ Criando o Secret.
+### Agora iremos criar o arquivo secrets, onde será armazenado as nossas senhas para acesso ao MYSQL.  
 Crie o arquivo mysql-secret.yaml.  
 ```
 New-Item mysql-secret.yaml
@@ -74,6 +79,14 @@ data:
   mysql-root-username: <seu-usuario>
   mysql-root-password: <sua-senha>
 ```  
+* ```apiVersion:v1``` -> Versão da api.
+* ```kind: Secret``` -> tipo de objeto a ser criado.
+* ```metadata:``` -> especifica informações do objeto a ser criado.
+   * ```name: labwordpress-secret``` -> definimos o nome do secret.
+   * ```namespace: labwordpress``` -> definimos o nome do namespace.
+* ```type: Opaque``` -> tipo que reforça a ocultação de informações.
+* ```data:``` -> especifica os dados inseridos no arquivo. Neste caso usuário e senha.  
+
 Se você estiver em uma máquina windows digite o seguinte comando:  
 ```
 wsl -d <distribuicao-do-wsl> -u <usuario>
@@ -96,8 +109,8 @@ kubectl apply -f mysql-secret.yaml
 ⚠️ Comando apply
 > Lembre-se que o comando apply deve ser sempre onde o arquivo se encontra.  
 
-### 🛠️ Subindo a aplicação MYSQL.
-#### 1. Criando o service do MYSQL.
+# 🛠️ Subindo a aplicação MYSQL.
+## 1. Criando o service do MYSQL.
 Crie o arquivo mysql-service.yaml.  
 ```
 New-Item mysql-service.yaml
@@ -119,6 +132,13 @@ spec:
     tier: mysql
   clusterIP: None
 ```  
+* Na primeira linha em ```apiVersion:v1``` definimos a versão da api. Na segunda, o tipo de objeto a ser criado```kind: Service```.  
+* Em ```metadata:``` especificamos as informações do objeto. Como:  
+   * ```name: wordpress-mysql``` -> definimos o nome do service.  
+   * ```namespace: labwordpress``` -> definimos o nome do namespace.  
+   * Em ```ports:``` ->  especificamos a porta do service: ```- port: 3308```.  
+   * Em ```clusterIP: None``` -> como padrão o service será ClusterIP, definimos que o serviço não terá um.
+   
 > Salve o arquivo e use o comando abaixo.  
 ```  
 kubectl apply -f mysql-service.yaml
@@ -126,7 +146,7 @@ kubectl apply -f mysql-service.yaml
 ⚠️ Comando apply
 > Lembre-se que o comando apply deve ser sempre onde o arquivo se encontra.  
 
-#### 2. Criando o PersistentVolumeClaim do MYSQL.
+## 2. Criando o PersistentVolumeClaim do MYSQL.
 Crie o arquivo mysql-persistent-volume.yaml.  
 ```
 New-Item mysql-persistent-volume.yaml
@@ -147,6 +167,13 @@ spec:
     requests:
       storage: 3Gi
 ```  
+* Na primeira linha em ```apiVersion:v1``` definimos a versão da api. Na segunda, o tipo de objeto a ser criado```kind: PersistentVolumeClaim```.  
+* Em ```metadata:``` especificamos as informações do objeto. Como:  
+   * ```name: mysql-pv-claim``` -> definimos o nome do pvc.  
+   * ```namespace: labwordpress``` -> definimos o nome do namespace.  
+   * Em ```accessModes:``` -> ```- ReadWriteOnce``` -> a leitura e escrita do volume serão por nó único.
+   * E em ```storage: 3Gi``` -> definimos o tamanho do pvc.  
+   
 > Salve o arquivo e use o comando abaixo.  
 ```  
 kubectl apply -f mysql-persistent-volume.yaml
@@ -154,7 +181,7 @@ kubectl apply -f mysql-persistent-volume.yaml
 ⚠️ Comando apply
 > Lembre-se que o comando apply deve ser sempre onde o arquivo se encontra.  
 
-#### 3. Criando o arquivo ConfigMap do MYSQL e WordPress.  
+## 3. Criando o arquivo ConfigMap do MYSQL e WordPress.  
 Crie o arquivo mysql-configmap.yaml.  
 ```
 New-Item mysql-configmap.yaml
@@ -170,6 +197,13 @@ data:
   db: "wordpress"
   mysql-service: "wordpress-mysql"
 ```  
+* ```apiVersion:v1``` -> Versão da api.
+* ```kind: ConfigMap``` -> tipo de objeto a ser criado.
+* ```metadata:``` -> especifica informações do objeto a ser criado.
+   * ```name: mysql-configmap``` -> definimos o nome do ConfigMap.
+   * ```namespace: labwordpress``` -> definimos o nome do namespace.
+* ```data:``` -> especifica os dados inseridos no arquivo. Neste caso o nome da database do WordPress e o service do MYSQL.  
+
 > Salve o arquivo e use o comando abaixo.  
 ```  
 kubectl apply -f mysql-configmap.yaml
@@ -177,7 +211,7 @@ kubectl apply -f mysql-configmap.yaml
 ⚠️ Comando apply
 > Lembre-se que o comando apply deve ser sempre onde o arquivo se encontra.
 
-#### 4. Criando o arquivo Deployment do MYSQL.
+## 4. Criando o arquivo Deployment do MYSQL.
 Crie o arquivo mysql-deployment.yaml.  
 ```
 New-Item mysql-deployment.yaml
@@ -239,6 +273,20 @@ spec:
         persistentVolumeClaim:
           claimName: mysql-pv-claim
 ```  
+* ```apiVersion:v1``` -> Versão da api.
+* ```kind: Deployment``` -> tipo de objeto a ser criado.
+* ```metadata:``` -> especifica informações do objeto a ser criado.
+   * ```name: wordpress-mysql``` -> definimos o nome do deployment.
+   * ```namespace: labwordpress``` -> definimos o nome do namespace.
+* ```spec:``` -> ```containers:``` -> ```image:```-> definimos a imagem com a tag.  
+* ```spec:``` -> ```containers:``` -> ```name:```-> definimos o nome do container.
+* Em ```env:``` -> definimos as variáveis de ambientes:  ```MYSQL_ROOT_PASSWORD``` , ```MYSQL_DATABASE``` , ```MYSQL_USER``` , ```MYSQL_PASSWORD```. 
+  * Os valores das variáveis que definimos no Secret nós referenciamos assim:  ```valueFrom:``` -> ```secretKeyRef:``` -> ```name: labwordpress-secret``` -> ```key: mysql-root-<username/password>``` (em nome colocamos o nome do arquivo Secret e em key colocamos a que definimos no arquivo referente ao usuário ou senha, dependendo da variável). 
+  * E os valores das variáveis que definimos no ConfigMap nós referenciamos assim:  ```valueFrom:``` -> ```configMapKeyRef:``` -> ```name: mysql-configmap``` -> ```key: db``` (em nome colocamos o nome do arquivo ConfigMap e em key colocamos a que definimos no ConfigMap).
+  * Em ```ports:``` ->  ```- containerPort: 3308``` -> especificamos a porta do MYSQL.
+  * Em ```volumeMounts:``` ->  ```- name: mysql-persistent-storage-lab``` -> ``` mountPath: /var/lib/mysql``` -> definimos um nome e o caminho para montar o volume do MYSQL.
+* E em ```volumes:``` -> ```persistentVolumeClaim:``` -> ```claimName: mysql-pv-claim``` -> especificamos o pvc criado anteriormente.
+
 > Salve o arquivo e use o comando abaixo.  
 ```  
 kubectl apply -f mysql-deployment.yaml
@@ -246,8 +294,8 @@ kubectl apply -f mysql-deployment.yaml
 ⚠️ Comando apply
 > Lembre-se que o comando apply deve ser sempre onde o arquivo se encontra.  
 
-### 🛠️ Subindo a aplicação WordPess.
-#### 1. Criando o service do Wordpress.  
+# 🛠️ Subindo a aplicação WordPess.
+## 1. Criando o service do Wordpress.  
 Crie o arquivo wordpress-service.yaml.   
 ```
 New-Item wordpress-service.yaml
@@ -269,14 +317,21 @@ spec:
     tier: frontend
   type: ClusterIP
 ```  
+* Na primeira linha em ```apiVersion:v1``` definimos a versão da api. Na segunda, o tipo de objeto a ser criado```kind: Service```.  
+* Em ```metadata:``` especificamos as informações do objeto. Como:  
+   * ```name: wordpress``` -> definimos o nome do service.  
+   * ```namespace: labwordpress``` -> definimos o nome do namespace.  
+   * Em ```ports:``` especificamos a porta do service: ```- port: 80```.  
+   * Em ```type: ClusterIP``` -> definimos o tipo de serviço do WordPress, que será do tipo ClusterIP. 
+
 > Salve o arquivo e use o comando abaixo.  
 ```  
 kubectl apply -f wordpress-service.yaml
 ```  
 ⚠️ Comando apply
 > Lembre-se que o comando apply deve ser sempre onde o arquivo se encontra.  
-
-#### 2. Criando o PersistentVolumeClaim do WordPress.
+  
+## 2. Criando o PersistentVolumeClaim do WordPress.
 Crie o arquivo wordpress-persistent-volume.yaml.  
 ```
 New-Item wordpress-persistent-volume.yaml
@@ -297,6 +352,13 @@ spec:
     requests:
       storage: 3Gi
 ```  
+* Na primeira linha em ```apiVersion:v1``` definimos a versão da api. Na segunda, o tipo de objeto a ser criado```kind: PersistentVolumeClaim```.  
+* Em ```metadata:``` especificamos as informações do objeto. Como:  
+   * ```name: wp-pv-claim``` -> definimos o nome do pvc.  
+   * ```namespace: labwordpress``` -> definimos o nome do namespace.  
+   * Em ```accessModes:``` -> ```- ReadWriteOnce``` -> a leitura e escrita do volume serão por nó único.
+   * E em ```storage: 3Gi``` -> definimos o tamanho do pvc. 
+   
 > Salve o arquivo e use o comando abaixo.  
 ```  
 kubectl apply -f wordpress-persistent-volume.yaml
@@ -304,7 +366,7 @@ kubectl apply -f wordpress-persistent-volume.yaml
 ⚠️ Comando apply
 > Lembre-se que o comando apply deve ser sempre onde o arquivo se encontra.  
 
-#### 3. Criando o arquivo Deployment do WordPress.
+## 3. Criando o arquivo Deployment do WordPress.
 Crie o arquivo wordpress-deployment.yaml.  
 ```
 New-Item wordpress-deployment.yaml
@@ -361,6 +423,20 @@ spec:
         persistentVolumeClaim:
           claimName: wp-pv-claim
 ```  
+* ```apiVersion:v1``` -> Versão da api.
+* ```kind: Deployment``` -> tipo de objeto a ser criado.
+* ```metadata:``` -> especifica informações do objeto a ser criado.
+   * ```name: wordpress``` -> definimos o nome do deployment.
+   * ```namespace: labwordpress``` -> definimos o nome do namespace.
+* ```spec:``` -> ```containers:``` -> ```image:```-> definimos a imagem com a tag.  
+* ```spec:``` -> ```containers:``` -> ```name:```-> definimos o nome do container.
+* Em ```env:``` -> definimos as variáveis de ambientes:  ```WORDPRESS_DB_HOST``` , ```WORDPRESS_DB_USER``` , ```MYSQL_USER``` , ```WORDPRESS_DB_PASSWORD```. 
+  * Os valores das variáveis que definimos no Secret nós referenciamos assim:  ```valueFrom:``` -> ```secretKeyRef:``` -> ```name: labwordpress-secret``` -> ```key: mysql-root-<username/password>``` (em nome colocamos o nome do arquivo Secret e em key colocamos a que definimos no arquivo referente ao usuário ou senha, dependendo da variável). 
+  * E os valores das variáveis que definimos no ConfigMap nós referenciamos assim:  ```valueFrom:``` -> ```configMapKeyRef:``` -> ```name: mysql-configmap``` -> ```key: db``` (em nome colocamos o nome do arquivo ConfigMap e em key colocamos a que definimos no ConfigMap).
+  * Em ```ports:``` ->  ```- containerPort: 80``` -> especificamos a porta do WordPress.
+  * Em ```volumeMounts:``` ->  ```- name: wordpress-persistent-storage-lab``` -> ``` mountPath: /var/www/html``` -> definimos um nome e o caminho para montar o volume do WordPress.
+* E em ```volumes:``` -> ```persistentVolumeClaim:``` -> ```claimName: wp-pv-claim``` -> especificamos o pvc criado anteriormente.
+
 > Salve o arquivo e use o comando abaixo.  
 ```  
 kubectl apply -f wordpress-deployment.yaml
@@ -374,7 +450,7 @@ kubectl get all -n labwordpress
 ```  
 ![WhatsApp Image 2022-11-19 at 19 26 37](https://user-images.githubusercontent.com/112576171/203058094-e30c9cd6-f8f3-4feb-9ad8-1460a43ae0f7.jpeg)  
 
-#### 4. Implementando o ingress do WordPress.  
+## 4. Implementando o ingress do WordPress.  
 Como configuramos nossa aplicação WordPress do tipo ClusterIP, para termos acesso externo a essa aplicação precisamos criar um ingress. Mas primeiro vamos implementar um ingress controller em nosso cluster rodando o comando abaixo:
 
 ``` 
@@ -418,6 +494,16 @@ spec:
         path: /
         pathType: Prefix
 ```  
+* ```apiVersion:networking.k8s.io/v1``` -> Versão da api.
+* ```kind: Ingress``` -> tipo de objeto a ser criado.
+* ```metadata:``` -> especifica informações do objeto a ser criado.
+   * ```name: wordpress``` -> definimos o nome do ingress.
+   * ```namespace: labwordpress``` -> definimos o nome do namespace.
+* ```spec:``` -> ```ingressClassName: nginx``` -> aqui especificamos o nginx, que será nosso ingress controller.
+* ```spec:``` -> ```- host: wpkubernetes.com``` -> colocamos o nosso DNS adicionado no arquivo ``` C:\Windows\System32\drivers\etc\hosts ```.
+  * ```service:``` -> ```name: wordpress``` -> nome do service WordPress.
+  * ```service:``` -> ```port:``` -> ``number: 80`` -> a porta em que o serviço do WordPress está rodando.
+
 > **Observação:** na linha ``` - host: wpkubernetes.com ``` você modifica colocando seu DNS.  
 
 > Salve o arquivo e use o comando abaixo.  
@@ -435,8 +521,16 @@ Na coluna ```HOSTS```, copie a URI e cole no seu browser para acessar a aplicaç
 
 ![WhatsApp Image 2022-11-19 at 19 27 45](https://user-images.githubusercontent.com/112576171/203058033-27f4d29b-9472-4d70-b319-46368df521b4.jpeg)
 
-Pronto! Você tem acesso a sua aplicação do WordPress. Agora, vamos partir para as configurações iniciais.
+# 📃 Arquivo final 
+> Os arquivos de configuração do MySql se encontram neste link: https://github.com/marciahenriquess/atividade-kubernetes/tree/main/MySql  
+  
+> Os arquivos de configuração do WordPress se encontram neste link: https://github.com/marciahenriquess/atividade-kubernetes/tree/main/WordPress  
 
+> O arquivo de configuração do Namespace se encontram neste link: https://github.com/marciahenriquess/atividade-kubernetes/blob/main/namespace.yaml    
+   
+Pronto! Você tem acesso a sua aplicação do WordPress. Agora, vamos partir para as configurações iniciais.  
+
+# 💻 Subindo a aplicação      
 ## 1. Escolha do idioma do site  
 Selecione o idioma e clique em ```Continue```. 
 
@@ -457,6 +551,7 @@ Digite seu usuário e senha. Depois, clique em ```Log in```.
 Você agora tem acesso ao seu dashboard do WordPress.  
 
 ![WhatsApp Image 2022-11-19 at 17 05 46](https://user-images.githubusercontent.com/112576171/203060128-624506f6-0b85-46f0-bcd7-b5259a51d4ad.jpeg)  
+
 
 ## 📌 Versões utilizadas 
 Docker Desktop: 20.10.17      
